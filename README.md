@@ -112,11 +112,17 @@ Two phases, so there's a working page to look at as early as possible without bu
 
 This is for local development only — it is **not** how the deployed product should work, because calling PokemonPriceTracker live on every page view would burn through the free tier's 100 credits/day almost immediately with any real traffic. (`fetch` calls are cached for an hour during dev to limit this, but that's a band-aid, not the real fix.)
 
-**Phase 1 — before deploying publicly:**
+**Phase 1 — before deploying publicly (not started):**
 5. Add `packages/db` (Prisma + Postgres via Neon), with tables for cards, sets, and daily price snapshots.
 6. Build `jobs/daily-sync` to pull from PokemonPriceTracker once a day and write snapshots — this is what the original pitch's "updates automatically, little to no manual work" actually depends on.
 7. Point `apps/api` at the database instead of calling PokemonPriceTracker live per request. Same ranking logic from Phase 0, different data source underneath.
 8. Deploy (Vercel + Neon), wire up the social auto-post.
+
+**Designed to absorb a paid API plan later without a rewrite** (not upgrading yet, but building for it):
+- The watchlist stays a plain config the sync job reads, not logic with an assumed size baked in — going from a dozen cards to a few hundred is a data change, not a code change.
+- `jobs/daily-sync` fetches in small batches with a configurable delay/concurrency limit, so it respects whatever the current plan's rate limit is (60 req/min on free) regardless of watchlist size — it just takes longer on a bigger list, it doesn't need rewriting.
+- The `Card`/`PriceSnapshot` schema doesn't encode any assumption about how many cards exist — scanning a bigger watchlist or eventually more of the market is purely "more rows," not a schema change.
+- A paid plan mainly changes *how big the watchlist can be* (and possibly unlocks deeper native history), not whether Phase 1's own-database approach is still the right design — see Data Source notes above.
 
 ## Open Questions / Next Steps
 
