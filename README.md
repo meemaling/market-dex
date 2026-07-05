@@ -54,10 +54,16 @@ These are backend constants, tunable without touching the UI — not user-facing
 
 **Primary (V1): [PokemonPriceTracker](https://www.pokemonpricetracker.com/pokemon-card-price-api)**
 
-- Free tier: 100 credits/day, 60 requests/min, 3-day price history, no card required
+- Free tier: 100 credits/day, 60 requests/min, no card required
 - Aggregates from TCGPlayer, eBay, and CardMarket
-- Returns pre-computed 7-day deltas and ROI%, reducing pipeline work
 - No commercial-use restriction found (unlike alternatives evaluated)
+
+**Confirmed from real API calls (not just the marketing docs) during Phase 0 build:**
+
+- **Credits are spent per card returned, and double when history is requested**: 1 credit/card for a plain price lookup, 2 credits/card when `includeHistory=true`. At 100 credits/day, that's ~50 cards/day max with history included. This rules out "scan the whole market for movers" on the free tier — V1 tracks a **fixed watchlist** of individual cards instead (see `apps/web/src/lib/watchlist.ts`), not an open scan. Expandable later, bounded by this budget until Phase 1 removes the need for `includeHistory` entirely (see below).
+- **Free tier history is capped at 3 days**, not 7 as the marketing page implied — and in practice that's often only 1-2 real data points per card. For many stable cards this shows as 0% change, which isn't a bug, it's a real consequence of a short window. This is the concrete reason Phase 1's own daily snapshots matter: once we're storing our own history over weeks, deltas become meaningful regardless of what window the API gives us, and we stop paying the 2x history credit cost since we compute deltas from our own stored data instead.
+- **Real sales volume data does exist**, correcting what was assumed earlier: each history point includes a `volume` field. This makes the liquidity floor in the ranking methodology a real filter, not just a proxy - confirmed working in testing, where it correctly excluded ultra-rare alternate-art/secret cards with near-zero trading volume.
+- Picking "the highest-priced printing of a name" (an early attempt at auto-building the watchlist) systematically selects exactly the illiquid chase variants the liquidity filter is meant to exclude. Default relevance search order surfaces more actively-traded printings more often - worth a more deliberate watchlist curation pass later.
 
 **Evaluated and rejected for V1:**
 
@@ -98,13 +104,13 @@ A future mobile app becomes `apps/mobile` (Expo/React Native), consuming `apps/a
 
 Two phases, so there's a working page to look at as early as possible without building the full pipeline first.
 
-**Phase 0 — local walking skeleton (no database yet):**
-1. Get a free PokemonPriceTracker API key.
-2. Scaffold `apps/web` (Next.js) and a minimal `apps/api` endpoint.
-3. `apps/api` calls PokemonPriceTracker directly, applies the ranking rules (% change using their built-in delta field, minimum price floor), returns top gainers/losers as JSON.
-4. `apps/web` renders that as the actual page, including card images.
+**Phase 0 — local walking skeleton (no database yet): done**
+1. ~~Get a free PokemonPriceTracker API key.~~
+2. ~~Scaffold `apps/web` (Next.js) and a minimal API endpoint.~~ Built as a Next.js route handler (`apps/web/src/app/api/movers`) rather than a separate `apps/api` service for now — a pragmatic Phase 0 shortcut, not the final architecture. Splitting it into a real standalone `apps/api` is Phase 1 work.
+3. ~~Calls PokemonPriceTracker directly, applies the ranking rules (% change, minimum price floor, minimum volume), returns top gainers/losers as JSON.~~ Working against a fixed watchlist (see Data Source notes above on why).
+4. ~~`apps/web` renders that as the actual page, including card images.~~
 
-This is for local development only — it is **not** how the deployed product should work, because calling PokemonPriceTracker live on every page view would burn through the free tier's 100 credits/day almost immediately with any real traffic.
+This is for local development only — it is **not** how the deployed product should work, because calling PokemonPriceTracker live on every page view would burn through the free tier's 100 credits/day almost immediately with any real traffic. (`fetch` calls are cached for an hour during dev to limit this, but that's a band-aid, not the real fix.)
 
 **Phase 1 — before deploying publicly:**
 5. Add `packages/db` (Prisma + Postgres via Neon), with tables for cards, sets, and daily price snapshots.
