@@ -14,11 +14,12 @@ Start with the smallest thing people would actually return to. Validate that bef
 
 **One feature: a daily Top Movers report.**
 
-- Top gaining cards (by % price change)
-- Top losing cards (by % price change)
+- Top gaining cards (by % price change), shown with card image, name, set, and price
+- Top losing cards (by % price change), shown with card image, name, set, and price
 - Computed once a day from a scheduled job, no manual curation
 - Public page, no login, no accounts, no personalization
 - Auto-posted summary to the existing social media account, linking back to the page
+- Web only for V1 — no native app. Nothing in this scope needs a native capability (no push notifications yet, since that requires accounts/watchlists, which are explicitly deferred). The backend is already structured as a standalone API so a native app can be added later without a rewrite, once a feature actually needs one.
 
 That's the entire V1 surface. No news, no restock tracking, no filters, no categories, no watchlists.
 
@@ -92,6 +93,24 @@ A future mobile app becomes `apps/mobile` (Expo/React Native), consuming `apps/a
 **Scheduling:** a simple daily cron (Vercel Cron, scheduled GitHub Action, or Supabase Edge Function). No job queue or orchestrator — not needed at this scale.
 
 **Hosting:** Vercel for the web app; API starts as Vercel serverless functions for speed of shipping, and can move to a dedicated host (Railway, Fly.io) later without a rewrite, since it's already structurally separate.
+
+## Build Order
+
+Two phases, so there's a working page to look at as early as possible without building the full pipeline first.
+
+**Phase 0 — local walking skeleton (no database yet):**
+1. Get a free PokemonPriceTracker API key.
+2. Scaffold `apps/web` (Next.js) and a minimal `apps/api` endpoint.
+3. `apps/api` calls PokemonPriceTracker directly, applies the ranking rules (% change using their built-in delta field, minimum price floor), returns top gainers/losers as JSON.
+4. `apps/web` renders that as the actual page, including card images.
+
+This is for local development only — it is **not** how the deployed product should work, because calling PokemonPriceTracker live on every page view would burn through the free tier's 100 credits/day almost immediately with any real traffic.
+
+**Phase 1 — before deploying publicly:**
+5. Add `packages/db` (Prisma + Postgres via Neon), with tables for cards, sets, and daily price snapshots.
+6. Build `jobs/daily-sync` to pull from PokemonPriceTracker once a day and write snapshots — this is what the original pitch's "updates automatically, little to no manual work" actually depends on.
+7. Point `apps/api` at the database instead of calling PokemonPriceTracker live per request. Same ranking logic from Phase 0, different data source underneath.
+8. Deploy (Vercel + Neon), wire up the social auto-post.
 
 ## Open Questions / Next Steps
 
