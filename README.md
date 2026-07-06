@@ -126,7 +126,7 @@ This is for local development only — it is **not** how the deployed product sh
 
 ## Open Questions / Next Steps
 
-- [ ] Confirm PokemonPriceTracker's terms explicitly allow commercial/public use before launch
+- [x] Confirm PokemonPriceTracker's terms explicitly allow commercial/public use before launch
 - [ ] Design the exact data model (cards, sets, daily price snapshots)
 - [ ] Decide the daily comparison window (24h vs. 7-day) — test which produces a more useful/less noisy list
 - [ ] Tune ranking thresholds (price floor, liquidity proxy) against real data once the sync job is running
