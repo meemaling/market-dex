@@ -18,7 +18,7 @@ Start with the smallest thing people would actually return to. Validate that bef
 - Top losing cards (by % price change), shown with card image, name, set, and price
 - Computed once a day from a scheduled job, no manual curation
 - Public page, no login, no accounts, no personalization
-- Auto-posted summary to the existing social media account, linking back to the page
+- Sharing to social media is manual (posted by hand), not automated — a deliberate choice, not a gap
 - Web only for V1 — no native app. Nothing in this scope needs a native capability (no push notifications yet, since that requires accounts/watchlists, which are explicitly deferred). The backend is already structured as a standalone API so a native app can be added later without a rewrite, once a feature actually needs one.
 
 That's the entire V1 surface. No news, no restock tracking, no filters, no categories, no watchlists.
@@ -27,7 +27,7 @@ That's the entire V1 surface. No news, no restock tracking, no filters, no categ
 
 - Needs exactly one data source (price data), not several.
 - Pure computation — no editorial judgment or NLP required.
-- Inherently shareable, which plugs directly into the distribution channel already in hand (the social account).
+- Inherently shareable — a single link with a clear daily headline is easy to post manually, no automation needed to get distribution value from it.
 - Directly tests the core hypothesis: do collectors care enough about daily price movement to come back? If not, no other feature saves the product.
 
 ### Explicitly out of scope for V1 (and why)
@@ -112,11 +112,11 @@ Two phases, so there's a working page to look at as early as possible without bu
 
 This is for local development only — it is **not** how the deployed product should work, because calling PokemonPriceTracker live on every page view would burn through the free tier's 100 credits/day almost immediately with any real traffic. (`fetch` calls are cached for an hour during dev to limit this, but that's a band-aid, not the real fix.)
 
-**Phase 1 — before deploying publicly (in progress):**
+**Phase 1 — before deploying publicly: done**
 5. ~~Add `packages/db` (Prisma + Postgres via Neon), with tables for cards, sets, and daily price snapshots.~~ Schema live in Neon (`Set`, `Card`, `PriceSnapshot`, unique on card+date so the daily sync can safely re-run). Verified end-to-end with a manual write/read/cleanup.
-6. ~~Build `jobs/daily-sync` to pull from PokemonPriceTracker once a day and write snapshots.~~ Shares its API client and watchlist with `apps/web` via the new `packages/pokemon-price-tracker` package (single source of truth, not duplicated between web and the job). Run manually so far via `npm run sync -w jobs/daily-sync`; not yet on a schedule (that's step 8).
+6. ~~Build `jobs/daily-sync` to pull from PokemonPriceTracker once a day and write snapshots.~~ Shares its API client and watchlist with `apps/web` via the new `packages/pokemon-price-tracker` package (single source of truth, not duplicated between web and the job). Scheduled via a GitHub Action (`.github/workflows/daily-sync.yml`, daily at 12:00 UTC, `DATABASE_URL`/`POKEMON_PRICE_TRACKER_API_KEY` as repo secrets) - kept as a standalone scheduled job rather than a Vercel Cron endpoint so it stays isolated from the web deployment.
 7. ~~Point the API at the database instead of calling PokemonPriceTracker live per request.~~ `apps/web`'s route handler now calls `getMovers()` from `packages/db` (same ranking rules as Phase 0 - % change, price floor, volume floor - just sourced from our own snapshots instead of the API's 3-day-capped history). Still the Phase 0 shortcut of living inside `apps/web` rather than a standalone `apps/api`; that split is still pending. Verified the % change math with fabricated multi-day data since the real database only has one day of snapshots so far - gainers/losers will stay empty in practice until `jobs/daily-sync` has run on at least two different days.
-8. Deploy (Vercel + Neon), wire up the social auto-post.
+8. ~~Deploy (Vercel + Neon).~~ Live at `market-dex-web.vercel.app`. Social sharing is manual (see V1 Scope) - no auto-post to build.
 
 **Designed to absorb a paid API plan later without a rewrite** (not upgrading yet, but building for it):
 - The watchlist stays a plain config the sync job reads, not logic with an assumed size baked in — going from a dozen cards to a few hundred is a data change, not a code change.
@@ -127,7 +127,6 @@ This is for local development only — it is **not** how the deployed product sh
 ## Open Questions / Next Steps
 
 - [x] Confirm PokemonPriceTracker's terms explicitly allow commercial/public use before launch
-- [ ] Design the exact data model (cards, sets, daily price snapshots)
-- [ ] Decide the daily comparison window (24h vs. 7-day) — test which produces a more useful/less noisy list
-- [ ] Tune ranking thresholds (price floor, liquidity proxy) against real data once the sync job is running
-- [ ] Design the social auto-post format (what makes a good daily share)
+- [x] Design the exact data model (cards, sets, daily price snapshots) — see `packages/db/prisma/schema.prisma`
+- [ ] Decide the daily comparison window (24h vs. 7-day) — currently 7 days (`packages/db/src/movers.ts`), not yet tuned against real data
+- [ ] Tune ranking thresholds (price floor, liquidity proxy) against real data once enough daily snapshots have accumulated
