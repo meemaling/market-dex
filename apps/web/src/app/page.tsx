@@ -1,20 +1,9 @@
 import Image from "next/image";
-import { WATCHLIST } from "@/lib/watchlist";
-import { fetchTopPrinting, toMover, type Mover } from "@/lib/pokemonPriceTracker";
+import { getMovers, type Mover } from "@market-dex/db";
 
-async function getMovers() {
-  const cards = await Promise.all(WATCHLIST.map(fetchTopPrinting));
-
-  const movers = cards
-    .filter((card): card is NonNullable<typeof card> => card !== null)
-    .map(toMover)
-    .filter((mover): mover is Mover => mover !== null);
-
-  const gainers = [...movers].sort((a, b) => b.pctChange - a.pctChange).slice(0, 5);
-  const losers = [...movers].sort((a, b) => a.pctChange - b.pctChange).slice(0, 5);
-
-  return { gainers, losers };
-}
+// Data only changes once a day (jobs/daily-sync), but this page is otherwise
+// static - revalidate hourly so a deploy isn't required to pick up new data.
+export const revalidate = 3600;
 
 function MoverCard({ mover }: { mover: Mover }) {
   const isPositive = mover.pctChange >= 0;
