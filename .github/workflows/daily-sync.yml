@@ -1,0 +1,27 @@
+name: Daily price sync
+
+on:
+  schedule:
+    # 12:00 UTC daily. Adjust as needed - this just needs to run once/day.
+    - cron: "0 12 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - run: npm ci
+
+      - run: npm run generate -w packages/db
+
+      - run: npm run sync -w jobs/daily-sync
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          POKEMON_PRICE_TRACKER_API_KEY: ${{ secrets.POKEMON_PRICE_TRACKER_API_KEY }}
