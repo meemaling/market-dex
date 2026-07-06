@@ -112,8 +112,8 @@ Two phases, so there's a working page to look at as early as possible without bu
 
 This is for local development only — it is **not** how the deployed product should work, because calling PokemonPriceTracker live on every page view would burn through the free tier's 100 credits/day almost immediately with any real traffic. (`fetch` calls are cached for an hour during dev to limit this, but that's a band-aid, not the real fix.)
 
-**Phase 1 — before deploying publicly (not started):**
-5. Add `packages/db` (Prisma + Postgres via Neon), with tables for cards, sets, and daily price snapshots.
+**Phase 1 — before deploying publicly (in progress):**
+5. ~~Add `packages/db` (Prisma + Postgres via Neon), with tables for cards, sets, and daily price snapshots.~~ Schema live in Neon (`Set`, `Card`, `PriceSnapshot`, unique on card+date so the daily sync can safely re-run). Verified end-to-end with a manual write/read/cleanup.
 6. Build `jobs/daily-sync` to pull from PokemonPriceTracker once a day and write snapshots — this is what the original pitch's "updates automatically, little to no manual work" actually depends on.
 7. Point `apps/api` at the database instead of calling PokemonPriceTracker live per request. Same ranking logic from Phase 0, different data source underneath.
 8. Deploy (Vercel + Neon), wire up the social auto-post.

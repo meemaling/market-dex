@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Set {
+  id    String @id @default(cuid())
+  name  String @unique
+  cards Card[]
+}
+
+model Card {
+  id          String          @id @default(cuid())
+  tcgPlayerId String          @unique
+  name        String
+  cardNumber  String
+  rarity      String?
+  imageUrl    String
+  setId       String
+  set         Set             @relation(fields: [setId], references: [id])
+  snapshots   PriceSnapshot[]
+  createdAt   DateTime        @default(now())
+
+  @@index([setId])
+}
+
+model PriceSnapshot {
+  id        String   @id @default(cuid())
+  cardId    String
+  card      Card     @relation(fields: [cardId], references: [id])
+  date      DateTime @db.Date
+  price     Float
+  volume    Int
+  createdAt DateTime @default(now())
+
+  @@unique([cardId, date])
+  @@index([cardId])
+}
