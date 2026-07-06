@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { WATCHLIST } from "@/lib/watchlist";
-import { fetchTopPrinting, toMover, type Mover } from "@/lib/pokemonPriceTracker";
+import { WATCHLIST, fetchTopPrinting } from "@market-dex/pokemon-price-tracker";
+import { toMover, type Mover } from "@/lib/ranking";
 
 export async function GET() {
   const cards = await Promise.all(WATCHLIST.map(fetchTopPrinting));

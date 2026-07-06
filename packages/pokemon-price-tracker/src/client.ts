@@ -1,16 +1,16 @@
 const BASE_URL = "https://www.pokemonpricetracker.com/api/v2";
 
-interface PriceHistoryPoint {
+export interface PriceHistoryPoint {
   date: string;
   market: number;
   volume: number | null;
 }
 
-interface CardCondition {
+export interface CardCondition {
   history: PriceHistoryPoint[];
 }
 
-interface CardResult {
+export interface CardResult {
   tcgPlayerId: string;
   name: string;
   setName: string;
@@ -41,9 +41,9 @@ export async function fetchTopPrinting(searchTerm: string): Promise<CardResult |
 
   // Deliberately not sorting by price: the highest-priced printing of any
   // given name tends to be an ultra-rare alternate-art / secret-rare variant
-  // with near-zero trading volume - exactly what the liquidity filter in
-  // toMover() is designed to exclude. Default relevance order surfaces more
-  // actively-traded printings more often.
+  // with near-zero trading volume - exactly what callers' liquidity filters
+  // are meant to exclude. Default relevance order surfaces more actively
+  // traded printings more often.
   const url = `${BASE_URL}/cards?search=${encodeURIComponent(searchTerm)}&limit=1&includeHistory=true`;
 
   const res = await fetch(url, {
@@ -60,49 +60,21 @@ export async function fetchTopPrinting(searchTerm: string): Promise<CardResult |
   return json.data[0] ?? null;
 }
 
-export interface Mover {
-  tcgPlayerId: string;
-  name: string;
-  setName: string;
-  cardNumber: string;
-  imageUrl: string;
-  price: number;
-  pctChange: number;
-  volume: number;
-}
-
-const MIN_PRICE = 3;
-const MIN_VOLUME = 1;
-
-// Turns a raw card result into a ranked Mover, or null if it fails the
-// liquidity/price-floor checks from the README's ranking methodology.
-export function toMover(card: CardResult): Mover | null {
-  if (card.prices.market < MIN_PRICE) return null;
-
+// Pulls the most recent *settled* history point's volume for a card,
+// defaulting to 0 when none is available. The API's history always reports
+// `volume: null` for the current day (it hasn't settled yet), so this walks
+// backward past any trailing nulls rather than trusting the last entry.
+export function latestVolume(card: CardResult): number {
   const conditions = card.priceHistory?.conditions;
-  if (!conditions) return null;
+  if (!conditions) return 0;
 
   const conditionKey = "Near Mint" in conditions ? "Near Mint" : Object.keys(conditions)[0];
   const history = conditions[conditionKey]?.history;
-  if (!history || history.length < 2) return null;
+  if (!history) return 0;
 
-  const first = history[0];
-  const last = history[history.length - 1];
-  const volume = history.reduce((sum, point) => sum + (point.volume ?? 0), 0);
-
-  if (volume < MIN_VOLUME) return null;
-  if (first.market <= 0) return null;
-
-  const pctChange = ((last.market - first.market) / first.market) * 100;
-
-  return {
-    tcgPlayerId: card.tcgPlayerId,
-    name: card.name,
-    setName: card.setName,
-    cardNumber: card.cardNumber,
-    imageUrl: card.imageCdnUrl400,
-    price: card.prices.market,
-    pctChange,
-    volume,
-  };
+  for (let i = history.length - 1; i >= 0; i--) {
+    const volume = history[i].volume;
+    if (volume !== null) return volume;
+  }
+  return 0;
 }
