@@ -5,34 +5,77 @@ import { getMovers, type Mover } from "@market-dex/db";
 // static - revalidate hourly so a deploy isn't required to pick up new data.
 export const revalidate = 3600;
 
-function MoverCard({ mover }: { mover: Mover }) {
-  const isPositive = mover.pctChange >= 0;
+function DeltaPill({ pctChange }: { pctChange: number }) {
+  const isPositive = pctChange >= 0;
   return (
-    <li className="flex items-center gap-4 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold tabular-nums ${
+        isPositive
+          ? "bg-good/10 text-good dark:bg-good/15"
+          : "bg-critical/10 text-critical dark:bg-critical/15"
+      }`}
+    >
+      <span aria-hidden>{isPositive ? "▲" : "▼"}</span>
+      {Math.abs(pctChange).toFixed(1)}%
+    </span>
+  );
+}
+
+function MoverCard({ mover }: { mover: Mover }) {
+  return (
+    <li className="flex items-center gap-4 rounded-xl border border-zinc-200/80 bg-white p-3 shadow-sm shadow-zinc-900/[0.03] dark:border-white/10 dark:bg-zinc-900">
       <Image
         src={mover.imageUrl}
         alt={mover.name}
         width={56}
         height={78}
-        className="rounded-sm"
+        className="rounded-md"
         unoptimized
       />
-      <div className="flex-1 min-w-0">
-        <p className="truncate font-medium text-zinc-900 dark:text-zinc-50">{mover.name}</p>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-semibold text-zinc-900 dark:text-zinc-50">{mover.name}</p>
         <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">
           {mover.setName} · #{mover.cardNumber}
         </p>
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">${mover.price.toFixed(2)}</p>
+        <p className="mt-0.5 text-sm font-medium tabular-nums text-zinc-700 dark:text-zinc-300">
+          ${mover.price.toFixed(2)}
+        </p>
       </div>
-      <span
-        className={`shrink-0 font-semibold ${
-          isPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-        }`}
-      >
-        {isPositive ? "+" : ""}
-        {mover.pctChange.toFixed(1)}%
-      </span>
+      <DeltaPill pctChange={mover.pctChange} />
     </li>
+  );
+}
+
+function MoverSection({
+  title,
+  emptyMessage,
+  movers,
+  accent,
+}: {
+  title: string;
+  emptyMessage: string;
+  movers: Mover[];
+  accent: "good" | "critical";
+}) {
+  return (
+    <section>
+      <h2 className="mb-3 flex items-center gap-1.5 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <span aria-hidden className={accent === "good" ? "text-good" : "text-critical"}>
+          {accent === "good" ? "▲" : "▼"}
+        </span>
+        {title}
+      </h2>
+      <ul className="flex flex-col gap-3">
+        {movers.length === 0 && (
+          <p className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+            {emptyMessage}
+          </p>
+        )}
+        {movers.map((mover) => (
+          <MoverCard key={mover.tcgPlayerId} mover={mover} />
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -42,41 +85,29 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-zinc-50 px-6 py-12 dark:bg-black sm:px-12">
       <main className="mx-auto max-w-3xl">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+        <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+          Market Dex
+        </p>
+        <h1 className="mt-1 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
           Today&apos;s Pokémon Card Movers
         </h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
           Biggest gainers and losers from the last few days, tracked across a starter watchlist.
         </p>
 
-        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2">
-          <section>
-            <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              Top Gainers
-            </h2>
-            <ul className="flex flex-col gap-3">
-              {gainers.length === 0 && (
-                <p className="text-sm text-zinc-500">No gainers matched the ranking filters today.</p>
-              )}
-              {gainers.map((mover) => (
-                <MoverCard key={mover.tcgPlayerId} mover={mover} />
-              ))}
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              Top Losers
-            </h2>
-            <ul className="flex flex-col gap-3">
-              {losers.length === 0 && (
-                <p className="text-sm text-zinc-500">No losers matched the ranking filters today.</p>
-              )}
-              {losers.map((mover) => (
-                <MoverCard key={mover.tcgPlayerId} mover={mover} />
-              ))}
-            </ul>
-          </section>
+        <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2">
+          <MoverSection
+            title="Top Gainers"
+            emptyMessage="No gainers matched the ranking filters today."
+            movers={gainers}
+            accent="good"
+          />
+          <MoverSection
+            title="Top Losers"
+            emptyMessage="No losers matched the ranking filters today."
+            movers={losers}
+            accent="critical"
+          />
         </div>
       </main>
     </div>

@@ -3,11 +3,18 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Status colors for price deltas - validated for contrast + CVD separation,
+     not picked by eye. Paired with an up/down glyph in the UI so direction
+     is never color-alone. */
+  --good: #006300;
+  --critical: #d03b3b;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-good: var(--good);
+  --color-critical: var(--critical);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -16,6 +23,8 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --good: #0ca30c;
+    --critical: #e66767;
   }
 }
 
