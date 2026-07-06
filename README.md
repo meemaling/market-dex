@@ -115,7 +115,7 @@ This is for local development only — it is **not** how the deployed product sh
 **Phase 1 — before deploying publicly (in progress):**
 5. ~~Add `packages/db` (Prisma + Postgres via Neon), with tables for cards, sets, and daily price snapshots.~~ Schema live in Neon (`Set`, `Card`, `PriceSnapshot`, unique on card+date so the daily sync can safely re-run). Verified end-to-end with a manual write/read/cleanup.
 6. ~~Build `jobs/daily-sync` to pull from PokemonPriceTracker once a day and write snapshots.~~ Shares its API client and watchlist with `apps/web` via the new `packages/pokemon-price-tracker` package (single source of truth, not duplicated between web and the job). Run manually so far via `npm run sync -w jobs/daily-sync`; not yet on a schedule (that's step 8).
-7. Point `apps/api` at the database instead of calling PokemonPriceTracker live per request. Same ranking logic from Phase 0, different data source underneath.
+7. ~~Point the API at the database instead of calling PokemonPriceTracker live per request.~~ `apps/web`'s route handler now calls `getMovers()` from `packages/db` (same ranking rules as Phase 0 - % change, price floor, volume floor - just sourced from our own snapshots instead of the API's 3-day-capped history). Still the Phase 0 shortcut of living inside `apps/web` rather than a standalone `apps/api`; that split is still pending. Verified the % change math with fabricated multi-day data since the real database only has one day of snapshots so far - gainers/losers will stay empty in practice until `jobs/daily-sync` has run on at least two different days.
 8. Deploy (Vercel + Neon), wire up the social auto-post.
 
 **Designed to absorb a paid API plan later without a rewrite** (not upgrading yet, but building for it):

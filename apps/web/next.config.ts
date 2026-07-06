@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@market-dex/pokemon-price-tracker"],
+  transpilePackages: ["@market-dex/db"],
   images: {
     remotePatterns: [
       {
