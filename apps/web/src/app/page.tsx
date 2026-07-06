@@ -23,7 +23,7 @@ function DeltaPill({ pctChange }: { pctChange: number }) {
 
 function MoverCard({ mover }: { mover: Mover }) {
   return (
-    <li className="flex items-center gap-4 rounded-xl border border-zinc-200/80 bg-white p-3 shadow-sm shadow-zinc-900/[0.03] dark:border-white/10 dark:bg-zinc-900">
+    <li className="flex items-center gap-4 rounded-xl border border-foreground/10 bg-surface p-3 shadow-sm shadow-foreground/[0.03]">
       <Image
         src={mover.imageUrl}
         alt={mover.name}
@@ -33,11 +33,11 @@ function MoverCard({ mover }: { mover: Mover }) {
         unoptimized
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold text-zinc-900 dark:text-zinc-50">{mover.name}</p>
-        <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="truncate font-semibold text-foreground">{mover.name}</p>
+        <p className="truncate text-sm text-muted">
           {mover.setName} · #{mover.cardNumber}
         </p>
-        <p className="mt-0.5 text-sm font-medium tabular-nums text-zinc-700 dark:text-zinc-300">
+        <p className="mt-0.5 text-sm font-medium tabular-nums text-foreground/80">
           ${mover.price.toFixed(2)}
         </p>
       </div>
@@ -59,7 +59,7 @@ function MoverSection({
 }) {
   return (
     <section>
-      <h2 className="mb-3 flex items-center gap-1.5 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+      <h2 className="mb-3 flex items-center gap-1.5 text-lg font-semibold text-foreground">
         <span aria-hidden className={accent === "good" ? "text-good" : "text-critical"}>
           {accent === "good" ? "▲" : "▼"}
         </span>
@@ -67,7 +67,7 @@ function MoverSection({
       </h2>
       <ul className="flex flex-col gap-3">
         {movers.length === 0 && (
-          <p className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+          <p className="rounded-xl border border-dashed border-foreground/15 p-4 text-sm text-muted">
             {emptyMessage}
           </p>
         )}
@@ -83,15 +83,15 @@ export default async function Home() {
   const { gainers, losers } = await getMovers();
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-6 py-12 dark:bg-black sm:px-12">
+    <div className="min-h-screen bg-background px-6 py-12 sm:px-12">
       <main className="mx-auto max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+        <p className="text-xs font-semibold uppercase tracking-widest text-accent">
           Market Dex
         </p>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
+        <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
           Today&apos;s Pokémon Card Movers
         </h1>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-muted">
           Biggest gainers and losers from the last few days, tracked across a starter watchlist.
         </p>
 
