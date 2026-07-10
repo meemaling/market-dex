@@ -126,7 +126,7 @@ This is for local development only — it is **not** how the deployed product sh
 
 ## Open Questions / Next Steps
 
-- [x] Confirm PokemonPriceTracker's terms explicitly allow commercial/public use before launch
+- [ ] Confirm PokemonPriceTracker's terms explicitly allow commercial/public use before launch — **re-opened 2026-07-10**: previously marked confirmed based on a bad automated read of the pricing page. The pricing page's own feature table actually shows "Commercial use license" with a red X for the Free and API tiers, and only checked for Business ($99/mo)+. The site is already deployed live and publicly promoted on the Free tier - this needs an authoritative answer (read PokemonPriceTracker's actual Terms of Service, not just the pricing page, or ask them directly) before assuming the current deployment is compliant.
 - [x] Design the exact data model (cards, sets, daily price snapshots) — see `packages/db/prisma/schema.prisma`
 - [ ] Decide the daily comparison window (24h vs. 7-day) — currently 7 days (`packages/db/src/movers.ts`), not yet tuned against real data
 - [ ] Tune ranking thresholds (price floor, liquidity proxy) against real data once enough daily snapshots have accumulated
